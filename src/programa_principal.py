@@ -51,7 +51,7 @@ while True:
 	#Read Accelerometer raw value
     acc_x = read_raw_data(ACCEL_YOUT_H)
     Ax = acc_x/16384.0
-    
+    print("inclinacion",Ax)    
     tmc.set_vactual(round(-300000*Ax)) 
     print("Ax = %.2f g" %Ax)
     time.sleep(0.1)
