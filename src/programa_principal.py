@@ -1,79 +1,77 @@
-from TMC_2209_StepperDriver import *
+import Driver
+import RPi.GPIO as GPIO
 from MPU6050 import *
 import time
+import signal
+import sys
+
 
 
 print("---")
 print("SCRIPT START")
 print("---")
 
+FINCARRERA_D = 27
+FINCARRERA_I = 17
 
 
+def signal_handler(sig,frame):
+        GPIO.cleanup()
+        sys.exit(0)
+
+def final_izq(channel):
+        print("derecha")
+        driver.setspeed(0)
+        driver.setStateMotor(False)
 
 
-#-----------------------------------------------------------------------
-# initiate the TMC_2209 class
-# use your pin for pin_en here
-#-----------------------------------------------------------------------
-tmc = TMC_2209(21)
+def final_der(channel):
+        print("izquierda")
+        driver.setspeed(0)
+        driver.setStateMotor(False)
+
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(FINCARRERA_I,GPIO.IN,pull_up_down=GPIO.PUD_UP)
+GPIO.setup(FINCARRERA_D,GPIO.IN,pull_up_down=GPIO.PUD_UP)
+
+#GPIO.add_event_detect(FINCARRERA_I,GPIO.FALLING,callback=final_izq,bouncetime=100)
+#GPIO.add_event_detect(FINCARRERA_D,GPIO.FALLING,callback=final_der,bouncetime=100)
+
+signal.signal(signal.SIGINT,signal_handler)
+
+
 #----------------------------------------------------------------------
 # init MPU6050
 #----------------------------------------------------------------------
 
 MPU_Init()
-
-#-----------------------------------------------------------------------
-# set the loglevel of the libary (currently only printed)
-# set whether the movement should be relative or absolute
-# both optional
-#-----------------------------------------------------------------------
-tmc.set_loglevel(Loglevel.DEBUG)
-tmc.set_movement_abs_rel(MovementAbsRel.ABSOLUTE)
-#----------------------------------------------------------------------
-# these functions change settings in the TMC register
-#-----------------------------------------------------------------------
-tmc.set_direction_reg(False)
-tmc.set_current(700)
-tmc.set_interpolation(True)
-tmc.set_spreadcycle(False)
-tmc.set_microstepping_resolution(256)
-tmc.set_internal_rsense(False)
-
-
-print("---\n---")
-
-#-----------------------------------------------------------------------
-# activate the motor current output
-#-----------------------------------------------------------------------
-tmc.set_motor_enabled(True)
+driver = Driver.Driver()
+driver.setStateMotor(True)
+obj = time.gmtime(0) 
+epoch = time.asctime(obj)
+P = 1.5
+I = 0
+D = 0
+integral = 0
 while True:
-	
-	#Read Accelerometer raw value
-    acc_x = read_raw_data(ACCEL_YOUT_H)
-    Ax = acc_x/16384.0
-    print("inclinacion",Ax)    
-    tmc.set_vactual(round(-300000*Ax)) 
-    print("Ax = %.2f g" %Ax)
-    time.sleep(0.1)
+    try:
+
+        #Read Accelerometer raw value
+        if(abs(Ax := read_raw_data(ACCEL_YOUT_H)/122.5) < 1 ):
+              Ax = 0
+    except Exception as e:
+        print(e)
+
+    #t1 = time.time_ns()
 
 
-
-#-----------------------------------------------------------------------
-# deactivate the motor current output
-#-----------------------------------------------------------------------
-tmc.set_motor_enabled(False)
-
-print("---\n---")
+    #print("Time ", time.time_ns() - t1)
+    print("inclinacion", Ax) 
+    #driver.setspeed(-Ax*P)
+    time.sleep(0.05)
 
 
-
-
-
-#-----------------------------------------------------------------------
-# deinitiate the TMC_2209 class
-#-----------------------------------------------------------------------
-tmc.deinit()
-del tmc
 
 print("---")
 print("SCRIPT FINISHED")
