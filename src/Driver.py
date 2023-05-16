@@ -1,6 +1,7 @@
 import RPi.GPIO as GPIO
-EN_I = 5
-EN_D = 6
+import time
+EN_I = 6
+EN_D = 5
 PWM =13
 FRECUENCY = 100
 
@@ -24,8 +25,23 @@ class Driver:
 
     def getStateMotor(self):
         return self.motorEnable
-            
-    def setspeed(self, speed):
+
+    def touchLimit(self, I_D):
+        if I_D :
+            GPIO.output(EN_I, GPIO.LOW)
+            GPIO.output(EN_D, GPIO.HIGH)
+            self.PWMspeed.ChangeDutyCycle(100)          
+        else:
+            GPIO.output(EN_D, GPIO.LOW)
+            GPIO.output(EN_I, GPIO.HIGH)
+            self.PWMspeed.ChangeDutyCycle(100)
+        time.sleep(5)
+        GPIO.output(EN_D, GPIO.LOW)
+        GPIO.output(EN_I, GPIO.LOW)
+        self.PWMspeed.ChangeDutyCycle(0)
+
+               
+    def setSpeed(self, speed):
             if self.motorEnable:
                     if speed < 0:
                             if speed < -100:
