@@ -5,7 +5,7 @@ import RPi.GPIO as GPIO
 import time
 import signal
 import sys
-
+from simple_pid import PID
 
 
 print("---")
@@ -72,14 +72,16 @@ driver.setStateMotor(True)
 obj = time.gmtime(0) 
 epoch = time.asctime(obj)
 P = 25
-I = 0
-D = 0
+I = 0.5
+D = 0.10
 integral = 0
+pid = PID(P,I,D,setpoint=1)
 while True:
     try:
         #heading, roll, pitch = bno.read_euler()
         x,y,z,w = bno.read_quaternion()
-        speed = (y+0.0025)/0.004
+        speed = (y+0.0072)/0.004
+        control = pid(speed)
     except Exception as e:
         print(e)
 
@@ -87,9 +89,11 @@ while True:
     # Print everything out.
 
     #print("Time ", time.time_ns() - t1)
-    print("inclinacion", speed) 
-    driver.setSpeed(speed*P)
-    time.sleep(0.01)
+    print("inclinacion", speed)
+    #print("velocidad_PID", control)
+    driver.setSpeed(-control)
+
+    time.sleep(0.001)
 
 
 
